@@ -18,9 +18,13 @@ class MetricsScreen extends StatelessWidget {
             style: Get.theme.textTheme.headline1,
           ),
         ),
-        body: SingleChildScrollView(
-          child: _BuildPageBody(),
-        ));
+        body: GetBuilder<AppController>(builder: (appController) {
+          return appController.loading
+              ? CircularProgressIndicator()
+              : SingleChildScrollView(
+                  child: _BuildPageBody(),
+                );
+        }));
   }
 }
 
@@ -29,34 +33,60 @@ class _BuildPageBody extends StatelessWidget {
   AppController appController = Get.find<AppController>();
   @override
   Widget build(BuildContext context) {
+    double shortestSide = MediaQuery.of(context).size.shortestSide;
+    // Determine if we should use mobile layout or not, 600 here is
+    // a common breakpoint for a typical 7-inch tablet.
+    bool useMobileLayout = shortestSide < 600;
     return Container(
+      width: Get.width,
       padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        children: [
-          _buildStatSection(
-              'metricsScreen_orderCount'.tr,
-              appController.orders.length.toString(),
-              Icons.shopping_cart_rounded),
-          const SizedBox(
-            width: 20,
-          ),
-          _buildStatSection(
-              'metricsScreen_priceAverage'.tr,
-              _calculatePricesAverage(appController.orders),
-              Icons.attach_money_rounded),
-          _buildStatSection(
-              'metricsScreen_returnCount'.tr,
-              _countReturnedOrders(appController.orders),
-              Icons.remove_shopping_cart_rounded),
-        ],
-      ),
+      child: useMobileLayout
+          ? Column(
+              children: [
+                _buildStatSection(
+                    'metricsScreen_orderCount'.tr,
+                    appController.orders.length.toString(),
+                    Icons.shopping_cart_rounded),
+                _buildStatSection(
+                    'metricsScreen_priceAverage'.tr,
+                    _calculatePricesAverage(appController.orders),
+                    Icons.attach_money_rounded),
+                _buildStatSection(
+                    'metricsScreen_returnCount'.tr,
+                    _countReturnedOrders(appController.orders),
+                    Icons.remove_shopping_cart_rounded),
+              ],
+            )
+          : Wrap(
+              alignment: WrapAlignment.center,
+              children: [
+                _buildStatSection(
+                    'metricsScreen_orderCount'.tr,
+                    appController.orders.length.toString(),
+                    Icons.shopping_cart_rounded,
+                    isMobile: useMobileLayout),
+                const SizedBox(
+                  width: 20,
+                ),
+                _buildStatSection(
+                    'metricsScreen_priceAverage'.tr,
+                    _calculatePricesAverage(appController.orders),
+                    Icons.attach_money_rounded,
+                    isMobile: useMobileLayout),
+                _buildStatSection(
+                    'metricsScreen_returnCount'.tr,
+                    _countReturnedOrders(appController.orders),
+                    Icons.remove_shopping_cart_rounded,
+                    isMobile: useMobileLayout),
+              ],
+            ),
     );
   }
 
-  Widget _buildStatSection(String title, String val, IconData icon) {
+  Widget _buildStatSection(String title, String val, IconData icon,
+      {bool isMobile = true}) {
     return Container(
-      width: Get.width * 0.45,
+      width: isMobile ? Get.width * 0.7 : Get.width * 0.45,
       margin: EdgeInsets.only(top: 20),
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(

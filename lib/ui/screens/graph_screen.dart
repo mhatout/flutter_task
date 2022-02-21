@@ -11,18 +11,21 @@ class GraphScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Get.theme.primaryColor,
-        elevation: 0,
-        title: Text(
-          'graphScreen_header'.tr,
-          style: Get.theme.textTheme.headline1,
+        appBar: AppBar(
+          backgroundColor: Get.theme.primaryColor,
+          elevation: 0,
+          title: Text(
+            'graphScreen_header'.tr,
+            style: Get.theme.textTheme.headline1,
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        child: _BuildPageBody(),
-      ),
-    );
+        body: GetBuilder<AppController>(builder: (appController) {
+          return appController.loading
+              ? CircularProgressIndicator()
+              : SingleChildScrollView(
+                  child: _BuildPageBody(),
+                );
+        }));
   }
 }
 

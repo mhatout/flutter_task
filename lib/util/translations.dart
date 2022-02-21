@@ -11,7 +11,7 @@ class MyTranslation extends Translations {
           "metricsScreen_header": "METRICS",
           "metricsScreen_orderCount": "Orders Count",
           "metricsScreen_priceAverage": "Prices Average",
-          "metricsScreen_returnCount": "Number Of Returns",
+          "metricsScreen_returnCount": "Returns Count",
           /***********************************************/
           "graphScreen_header": "CHARTS",
           "graphScreen_chartHeader": "Orders Count By Month",
