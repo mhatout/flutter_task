@@ -1,60 +1,94 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:myapp/ui/home_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:provider/provider.dart';
-import 'package:myapp/providers/main_provider.dart';
+import 'package:get/get.dart';
+import 'package:myapp/ui/screens/graph_screen.dart';
+import 'package:myapp/ui/screens/metrics_screen.dart';
 
+import 'controllers/app_controller.dart';
+import 'ui/screens/home_screen.dart';
+import 'util/sharedPrefs.dart';
+import 'util/theme.dart';
+import 'util/translations.dart';
 
-class MyHttpOverrides extends HttpOverrides{
-  @override
-  HttpClient createHttpClient(SecurityContext context){
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
-  }
-}
-void main() {
-  HttpOverrides.global = new MyHttpOverrides();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharedPrefs.init();
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    final MainProvider mainProvider = MainProvider();
-    mainProvider.fetchMainModel();
-    return ChangeNotifierProvider.value(
-      value: mainProvider,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Inovola Task',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          fontFamily: 'Cairo',
-          textTheme: TextTheme(
-            headline1: TextStyle(fontSize: 17.0, fontWeight: FontWeight.bold, color: Color(0xff9398ac)),
-            headline2: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Color(0xffadb1c4)),
-            headline3: TextStyle(fontSize: 27.0, fontWeight: FontWeight.bold, color: Color(0xff9398ac)),
-            headline4: TextStyle(fontSize: 26.0, fontWeight: FontWeight.bold, color: Color(0xffadb1c4)),
-            bodyText1: TextStyle(fontSize: 14.0, color: Color(0xffadb1c4), fontWeight: FontWeight.w600),
-            bodyText2: TextStyle(fontSize: 24.0, color: Color(0xffadb1c4), fontWeight: FontWeight.w600),
-          ),
-        ),
-        home: HomeScreen(),
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: [
-          const Locale('en'), // English
-          const Locale('ar'), // Arabic
-        ],
-        locale: Locale('ar'),
-      ),
-    );
+  State<MyApp> createState() => _MyAppState();
+  static void setLocale(BuildContext context, Locale newLocale) {
+    _MyAppState? state = context.findAncestorStateOfType<_MyAppState>();
+    print(newLocale.languageCode);
+    // ignore: invalid_use_of_protected_member
+    state!.setState(() => state.locale = newLocale);
   }
 }
 
+class _MyAppState extends State<MyApp> {
+  Locale? locale;
+  AppController appController = Get.put(AppController());
+
+  @override
+  void initState() {
+    super.initState();
+    _setInitialData();
+    setState(() => this.locale = _fetchLocale());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Task',
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaleFactor: 1.0,
+          ),
+          child: child!,
+        );
+      },
+      theme: AppTheme.theme,
+      translations: MyTranslation(),
+      home: HomeScreen(),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('en'), // English
+        const Locale('ar'), // Arabic
+      ],
+      locale: this.locale,
+      localeResolutionCallback: (deviceLocale, supportedLocales) {
+        if (this.locale == null) {
+          this.locale = deviceLocale!.languageCode == 'en' ||
+                  deviceLocale.languageCode == 'ar'
+              ? deviceLocale
+              : Locale('ar');
+          Get.locale = deviceLocale.languageCode == 'en' ||
+                  deviceLocale.languageCode == 'ar'
+              ? deviceLocale
+              : Locale('ar');
+        }
+        return this.locale;
+      },
+      initialRoute: '/',
+      routes: <String, WidgetBuilder>{
+        "/MetricsScreen": (context) => MetricsScreen(),
+        "/GraphScreen": (context) => GraphScreen(),
+      },
+    );
+  }
+
+  Future<void> _setInitialData() async => await appController.getOrders();
+
+  _fetchLocale() {
+    if (SharedPrefs.getInstance()!.getData('langCode') == null) return null;
+    return Locale(SharedPrefs.getInstance()!.getData('langCode'));
+  }
+}
